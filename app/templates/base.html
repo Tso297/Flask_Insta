@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {{ moment.include_moment() }}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -18,14 +19,18 @@
 <body>
 
       {% include 'nav.html' %}
+      {% include 'messages.html' %}
+      <div class="container">
+        {% block content %}
 
-      {% block content %}
+        {% endblock %}
+      </div>
 
-      {% endblock %}
         <h3 id="travis">Test</h3>
       {% include 'footer.html' %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.1.0/js/bootstrap.min.js"></script>
+<script src="https://kit.fontawesome.com/035200f02b.js" crossorigin="anonymous"></script>
 </body>
 </html>
