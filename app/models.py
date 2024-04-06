@@ -2,6 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
+from secrets import token_hex
+from flask_marshmallow import Marshmallow
 
 db = SQLAlchemy()
 
@@ -17,6 +19,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String, nullable=False)
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
     posts = db.relationship("Post", backref='author' , lazy=True)
+    token = db.Column(db.String, unique=True)
 #    liked_posts = db.relationship("Post", secondary='like')
     liked_posts2 = db.relationship("Post", secondary='like2', lazy = 'dynamic')
     followed = db.relationship("User",
@@ -31,6 +34,21 @@ class User(db.Model, UserMixin):
         self.username = username
         self.email = email
         self.password = generate_password_hash(password)
+        self.token = token_hex(16)
+
+    def __repr__(self):
+        return {self.username}
+        
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'username' : self.username,
+            'email' : self.email,
+            'date_created' : self.date_created,
+            'token' : self.token,
+            'follower_count' :  len(self.followers.all()),
+            'following_count' :  len(self.followed.all()),
+        }
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key= True)
@@ -51,7 +69,7 @@ class Post(db.Model):
     def like_count(self):
         return len(self.likers2)
 
-    def to_dict(self):
+    def to_dict(self, user=None):
         return {
             'id' : self.id,
             'title' : self.title,
@@ -60,7 +78,8 @@ class Post(db.Model):
             'date_created' : self.date_created,
             'user_id' : self.user_id,
             'author' : self.author.username,
-            'like_count' : self.like_count()
+            'like_count' : self.like_count(),
+            'liked' : user in self.likers2
         }
 
 like2 = db.Table('like2',
@@ -76,3 +95,43 @@ like2 = db.Table('like2',
 #     def __init__(self, user_id, post_id):
 #         self.user_id = user_id
 #         self.post_id = post_id
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key= True)
+    product_name = db.Column(db.String(100), nullable=False)
+    img_url = db.Column(db.String, nullable=False)
+    description = db.Column(db.String(500))
+    price = db.Column(db.Numeric(10,2))
+    date_created = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
+
+
+    def __init__(self, product_name, description, img_url, price):
+        self.product_name = product_name
+        self.description = description
+        self.img_url = img_url
+        self.price = price
+
+    def to_dict(self):
+        return {
+            'id' : self.id,
+            'product_name' : self.product_name,
+            'description' : self.description,
+            'img_url' : self.img_url,
+            'price' : self.price,
+            'date_created' : self.date_created,
+        }
+    
+class Cart (db.Model):
+    id = db.Column(db.Integer, primary_key= True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id', ondelete="CASCADE"), nullable=False)
+
+    def __init__(self, user_id, product_id):
+        self.user_id = user_id
+        self.product_id = product_id
+
+class ProductSchema(Marshmallow().Schema):
+    class Meta:
+        fields = ['product_name', 'description', 'img_url', 'price']
+
+product_schema = ProductSchema()
