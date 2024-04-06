@@ -86,7 +86,7 @@ def get_cart_API(user):
         'cart': cart
     }, 200
 
-FRONTEND_URL = 'http://localhost:5173'
+FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
 @api.post('/checkout')
 def stripe_checkout():
